@@ -35,6 +35,8 @@
 #include <vtkImageActor.h>
 #include <vtkImageMapper3D.h>
 
+#include <vector>
+
 
 
 // helper class to format slice status message
@@ -56,8 +58,9 @@ public:
    vtkTypeMacro(myVtkInteractorStyleImage, vtkInteractorStyleImage)
 
 protected:
+   std::vector<std::string> fileNames;
    vtkImageViewer2* _ImageViewer;
-   vtkTextMapper* _StatusMapper;
+   //vtkTextMapper* _StatusMapper;
    int _Slice;
    int _MinSlice;
    int _MaxSlice;
@@ -71,9 +74,9 @@ public:
       cout << "Slicer: Min = " << _MinSlice << ", Max = " << _MaxSlice << std::endl;
    }
 
-   void SetStatusMapper(vtkTextMapper* statusMapper) {
+   /*void SetStatusMapper(vtkTextMapper* statusMapper) {
       _StatusMapper = statusMapper;
-   }
+   }*/
 
 
 protected:
@@ -83,7 +86,7 @@ protected:
          cout << "MoveSliceForward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
          std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
-         _StatusMapper->SetInput(msg.c_str());
+         //_StatusMapper->SetInput(msg.c_str());
          _ImageViewer->Render();
       }
    }
@@ -94,7 +97,7 @@ protected:
          cout << "MoveSliceBackward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
          std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
-         _StatusMapper->SetInput(msg.c_str());
+         //_StatusMapper->SetInput(msg.c_str());
          _ImageViewer->Render();
       }
    }
@@ -160,7 +163,7 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkArrowSource> glyphForm = vtkSmartPointer<vtkArrowSource>::New();
     vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
     glyphs->SetSourceConnection(glyphForm->GetOutputPort()); //set type of glyph
-    glyphs->SetInputData(readerVector->GetOutput()/*myUnstructuredGrid*/); //set points and directions
+    glyphs->SetInputData(readerVector->GetOutput()); //set points and directions ///myUnstructuredGrid
     glyphs->ScalingOn();
     glyphs->SetVectorModeToUseVector();
     glyphs->SetScaleModeToScaleByVector();
@@ -179,9 +182,9 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
     glyphActor->SetMapper(glyphMapper);
 
-    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->AddActor(glyphActor);
-    renderer->SetBackground(0.328125, 0.347656, 0.425781);
+    ///vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+    ///renderer->AddActor(glyphActor);
+    ///renderer->SetBackground(0.328125, 0.347656, 0.425781);
 
 
 
@@ -194,14 +197,67 @@ int main(int argc, char* argv[])
 
     // Read all the DICOM files in the specified directory.
     vtkSmartPointer<vtkDICOMImageReader> reader = vtkSmartPointer<vtkDICOMImageReader>::New();
-    ///reader->SetDirectoryName(folder.c_str());
-    reader->SetFileName("dicom/OZON_MATTHEW.MR.ESSAIS_KM.0007.0001.2014.01.20.21.11.15.125000.4868800.IMA");
+    reader->SetDirectoryName(folder.c_str());
     reader->Update();
 
-    vtkSmartPointer<vtkImageData> originalImage = vtkSmartPointer<vtkImageData>::New();
+
+
+
+
+
+
+
+
+
+    // Visualize
+    vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
+    imageViewer->SetInputConnection(reader->GetOutputPort());
+
+
+    // create an interactor with our own style (inherit from vtkInteractorStyleImage)
+    // in order to catch mousewheel and key events
+    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+
+    vtkSmartPointer<myVtkInteractorStyleImage> myInteractorStyle = vtkSmartPointer<myVtkInteractorStyleImage>::New();
+
+    // make imageviewer2 and sliceTextMapper visible to our interactorstyle
+    // to enable slice status message updates when scrolling through the slices
+    myInteractorStyle->SetImageViewer(imageViewer);
+
+    imageViewer->SetupInteractor(renderWindowInteractor);
+    // make the interactor use our own interactorstyle
+    // cause SetupInteractor() is defining it's own default interatorstyle
+    // this must be called after SetupInteractor()
+    renderWindowInteractor->SetInteractorStyle(myInteractorStyle);
+    // add slice status message and usage hint message to the renderer
+    /// may add glyph actor here. imageViewer->GetRenderer()->AddActor2D(sliceTextActor);
+    imageViewer->GetRenderer()->AddActor2D(glyphActor);
+
+    // initialize rendering and interaction
+    //imageViewer->GetRenderWindow()->SetSize(400, 300);
+    //imageViewer->GetRenderer()->SetBackground(0.2, 0.3, 0.4);
+    imageViewer->Render();
+    imageViewer->GetRenderer()->ResetCamera();
+    imageViewer->Render();
+    renderWindowInteractor->Start();
+    return EXIT_SUCCESS;
+
+
+
+
+
+
+
+
+
+
+
+
+    /*vtkSmartPointer<vtkImageData> originalImage = vtkSmartPointer<vtkImageData>::New();
     originalImage = reader->GetOutput();
-    ///vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
-    ///imageViewer->SetInputConnection(reader->GetOutputPort());
+
+    vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
+    imageViewer->SetInputConnection(reader->GetOutputPort());
 
     // (xmin, ymin, xmax, ymax)
     double originalViewport[4] = {0.0, 0.0, 1.0, 1.0};
@@ -211,26 +267,33 @@ int main(int argc, char* argv[])
     originalActor->InterpolateOff();
 
     //vtkSmartPointer<vtkRenderer> originalRenderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->SetViewport(originalViewport);
-    renderer->SetBackground(.2, .3, .6);
-    renderer->AddActor(originalActor);
+    ///renderer->SetViewport(originalViewport);
+    ///renderer->SetBackground(.2, .3, .6);
+    ///renderer->AddActor(originalActor);
+    imageViewer->GetRenderer()->SetViewport(originalViewport);
+    imageViewer->GetRenderer()->SetBackground(.2, .3, .6);
+    //imageViewer->GetRenderer()->AddActor(originalActor);
+    imageViewer->GetRenderer()->AddActor(glyphActor);
 
     vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-    renderer->SetViewport(originalViewport);
-    renderWindow->AddRenderer(renderer);
+    ///renderer->SetViewport(originalViewport);
+    ///renderWindow->AddRenderer(renderer);
     //renderWindow->AddRenderer(originalRenderer);
 
 
 
 
     // Render and interact
-    vtkSmartPointer<vtkInteractorStyleImage> style = vtkSmartPointer<vtkInteractorStyleImage>::New();
-    //vtkSmartPointer<myVtkInteractorStyleImage> myInteractorStyle = vtkSmartPointer<myVtkInteractorStyleImage>::New();
-    ///myInteractorStyle->SetImageViewer(imageViewer);
+    vtkSmartPointer<myVtkInteractorStyleImage> myInteractorStyle = vtkSmartPointer<myVtkInteractorStyleImage>::New();
+    myInteractorStyle->SetImageViewer(imageViewer);
 
     vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    renderWindowInteractor->SetInteractorStyle( style );//myInteractorStyle
+    imageViewer->SetupInteractor(renderWindowInteractor);
+
+
+
+    renderWindowInteractor->SetInteractorStyle( myInteractorStyle );//style
     renderWindowInteractor->SetRenderWindow(renderWindow);
     renderWindow->Render();
-    renderWindowInteractor->Start();
+    renderWindowInteractor->Start();*/
 }
