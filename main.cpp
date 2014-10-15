@@ -35,6 +35,9 @@
 #include <vtkImageActor.h>
 #include <vtkImageMapper3D.h>
 
+#include <vtkStdString.h>
+#include <vtkStringArray.h>
+#include <iostream>
 #include <vector>
 
 
@@ -58,7 +61,8 @@ public:
    vtkTypeMacro(myVtkInteractorStyleImage, vtkInteractorStyleImage)
 
 protected:
-   std::vector<std::string> fileNames;
+   std::vector<std::string> _fileNames;
+   vtkSmartPointer<vtkActor> _glyphActor;
    vtkImageViewer2* _ImageViewer;
    //vtkTextMapper* _StatusMapper;
    int _Slice;
@@ -73,6 +77,32 @@ public:
       _Slice = _MinSlice;
       cout << "Slicer: Min = " << _MinSlice << ", Max = " << _MaxSlice << std::endl;
    }
+   void setVectorFileName(std::vector<std::string> fileNames)
+   {
+       _fileNames = fileNames;
+       vtkSmartPointer<vtkUnstructuredGridReader> readerVector = vtkSmartPointer<vtkUnstructuredGridReader>::New();
+       readerVector->SetFileName(_fileNames.at(0).data());
+       readerVector->Update();
+
+       //set places and orientations of all glyphs
+       vtkSmartPointer<vtkArrowSource> glyphForm = vtkSmartPointer<vtkArrowSource>::New();
+       vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
+       glyphs->SetSourceConnection(glyphForm->GetOutputPort()); //set type of glyph
+       glyphs->SetInputData(readerVector->GetOutput()); //set points and directions ///myUnstructuredGrid
+       glyphs->ScalingOn();
+       glyphs->SetVectorModeToUseVector();
+       glyphs->SetScaleModeToScaleByVector();
+       glyphs->SetScaleFactor(0.20);
+       glyphs->Update();
+
+       //usual stuffs for ploting
+       vtkSmartPointer<vtkPolyDataMapper> glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+       glyphMapper->SetInputConnection(glyphs->GetOutputPort());
+       glyphMapper->ScalarVisibilityOff();
+       _glyphActor = vtkSmartPointer<vtkActor>::New();
+       _glyphActor->SetMapper(glyphMapper);
+       _ImageViewer->GetRenderer()->AddActor2D(_glyphActor);
+   }
 
    /*void SetStatusMapper(vtkTextMapper* statusMapper) {
       _StatusMapper = statusMapper;
@@ -85,8 +115,9 @@ protected:
          _Slice += 1;
          cout << "MoveSliceForward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
-         std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
+         //std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
          //_StatusMapper->SetInput(msg.c_str());
+         if(_Slice<_MaxSlice) setActorVector();
          _ImageViewer->Render();
       }
    }
@@ -96,10 +127,38 @@ protected:
          _Slice -= 1;
          cout << "MoveSliceBackward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
-         std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
+         //std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
          //_StatusMapper->SetInput(msg.c_str());
+         if(_Slice<_MaxSlice) setActorVector();
          _ImageViewer->Render();
       }
+   }
+
+   void setActorVector()
+   {
+       vtkSmartPointer<vtkUnstructuredGridReader> readerVector = vtkSmartPointer<vtkUnstructuredGridReader>::New();
+       readerVector->SetFileName(_fileNames.at(_Slice).data());
+       readerVector->Update();
+
+       //set places and orientations of all glyphs
+       vtkSmartPointer<vtkArrowSource> glyphForm = vtkSmartPointer<vtkArrowSource>::New();
+       vtkSmartPointer<vtkGlyph3D> glyphs = vtkSmartPointer<vtkGlyph3D>::New();
+       glyphs->SetSourceConnection(glyphForm->GetOutputPort()); //set type of glyph
+       glyphs->SetInputData(readerVector->GetOutput()); //set points and directions ///myUnstructuredGrid
+       glyphs->ScalingOn();
+       glyphs->SetVectorModeToUseVector();
+       glyphs->SetScaleModeToScaleByVector();
+       glyphs->SetScaleFactor(0.20+0.2*((float) _Slice));//
+       glyphs->Update();
+
+       //usual stuffs for ploting
+       vtkSmartPointer<vtkPolyDataMapper> glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+       glyphMapper->SetInputConnection(glyphs->GetOutputPort());
+       glyphMapper->ScalarVisibilityOff();
+       //vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
+       _glyphActor->SetMapper(glyphMapper);
+       _ImageViewer->UpdateDisplayExtent();
+       //_ImageViewer->GetRenderer()->AddActor2D(glyphActor);
    }
 
 
@@ -113,6 +172,9 @@ protected:
          //cout << "Down arrow key was pressed." << endl;
          MoveSliceBackward();
       }
+
+
+
       // forward event
       vtkInteractorStyleImage::OnKeyDown();
    }
@@ -150,7 +212,29 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    ///load vectors and create an actor
+    std::vector<std::string> fileNames;
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+    fileNames.push_back("test2D.vtu");
+
+
+
+    /*///load vectors and create an actor
     // Create the reader for the data.
     // This is the data that will be volume rendered.
     std::string filename = argv[1];
@@ -184,7 +268,7 @@ int main(int argc, char* argv[])
 
     ///vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
     ///renderer->AddActor(glyphActor);
-    ///renderer->SetBackground(0.328125, 0.347656, 0.425781);
+    ///renderer->SetBackground(0.328125, 0.347656, 0.425781);*/
 
 
 
@@ -197,7 +281,36 @@ int main(int argc, char* argv[])
 
     // Read all the DICOM files in the specified directory.
     vtkSmartPointer<vtkDICOMImageReader> reader = vtkSmartPointer<vtkDICOMImageReader>::New();
+    /*vtkSmartPointer<vtkStringArray> myNames = vtkSmartPointer<vtkStringArray>::New();
+    myNames->SetNumberOfComponents(19);
+    myNames->SetValue(0,"dicom/01.dcm");
+    myNames->SetValue(1,"dicom/02.dcm");
+    myNames->SetValue(2,"dicom/03.dcm");
+    myNames->SetValue(3,"dicom/04.dcm");
+    myNames->SetValue(4,"dicom/05.dcm");
+    myNames->SetValue(5,"dicom/06.dcm");
+    myNames->SetValue(6,"dicom/07.dcm");
+    myNames->SetValue(7,"dicom/08.dcm");
+    myNames->SetValue(8,"dicom/09.dcm");
+    myNames->SetValue(9,"dicom/10.dcm");
+    myNames->SetValue(10,"dicom/11.dcm");
+    myNames->SetValue(11,"dicom/12.dcm");
+    myNames->SetValue(12,"dicom/13.dcm");
+    myNames->SetValue(13,"dicom/14.dcm");
+    myNames->SetValue(14,"dicom/15.dcm");
+    myNames->SetValue(15,"dicom/16.dcm");
+    myNames->SetValue(16,"dicom/17.dcm");
+    myNames->SetValue(17,"dicom/18.dcm");
+    myNames->SetValue(18,"dicom/19.dcm");
+    //reader->SetNumberOfScalarComponents(19);
+    reader->SetFileNames(myNames);
+    reader->Update();*/
     reader->SetDirectoryName(folder.c_str());
+    reader->Update();
+
+    reader->PrintSelf(std::cout,vtkIndent(5));
+    std::cout << reader->GetDirectoryName() << std::endl;
+    std::cout << reader->GetFileNames() << std::endl;
     reader->Update();
 
 
@@ -223,6 +336,8 @@ int main(int argc, char* argv[])
     // make imageviewer2 and sliceTextMapper visible to our interactorstyle
     // to enable slice status message updates when scrolling through the slices
     myInteractorStyle->SetImageViewer(imageViewer);
+    myInteractorStyle->setVectorFileName(fileNames);
+
 
     imageViewer->SetupInteractor(renderWindowInteractor);
     // make the interactor use our own interactorstyle
@@ -231,7 +346,7 @@ int main(int argc, char* argv[])
     renderWindowInteractor->SetInteractorStyle(myInteractorStyle);
     // add slice status message and usage hint message to the renderer
     /// may add glyph actor here. imageViewer->GetRenderer()->AddActor2D(sliceTextActor);
-    imageViewer->GetRenderer()->AddActor2D(glyphActor);
+    //imageViewer->GetRenderer()->AddActor2D(glyphActor);
 
     // initialize rendering and interaction
     //imageViewer->GetRenderWindow()->SetSize(400, 300);
