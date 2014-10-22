@@ -17,6 +17,7 @@
 #include <vtkArrowSource.h>
 #include <vtkGlyph2D.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
 
 
 // helper class to format slice status message

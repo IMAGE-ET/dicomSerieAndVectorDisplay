@@ -22,6 +22,7 @@
 #include <vtkRenderWindowInteractor.h> /*in order to define an interactor with data*/
 #include <myvtkinteractorstyleimage.h> /*define the interactions (inherites from the usual interaction style)*/
 #include <vtkObjectFactory.h>
+#include <vtkImageActor.h>
 
 vtkStandardNewMacro(myVtkInteractorStyleImage)
 
@@ -41,6 +42,9 @@ int main(int argc, char* argv[])
     // Visualize
     vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
     imageViewer->SetInputConnection(reader->GetOutputPort()); //set the data to visualize
+    imageViewer->GetImageActor()->InterpolateOff();
+    //imageViewer->GetRenderer()->GetActors()->GetLastActor()->GetMapper()->InterpolateScalarsBeforeMappingOff();
+    //imageViewer->InterpolateOff();
 
     // create an interactor with our own style (inherit from vtkInteractorStyleImage)
     // in order to catch mousewheel and key events

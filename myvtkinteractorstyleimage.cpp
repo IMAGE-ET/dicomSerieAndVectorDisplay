@@ -48,6 +48,7 @@ void myVtkInteractorStyleImage::MoveSliceForward(void)
       _Slice += 1;
       //cout << "MoveSliceForward::Slice = " << _Slice << std::endl;
       _ImageViewer->SetSlice(_Slice);
+      //_ImageViewer->GetRenderer()->GetActors()->GetLastActor()->GetMapper()->InterpolateScalarsBeforeMappingOff();
       //std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
       //_StatusMapper->SetInput(msg.c_str());
       if(_Slice<_MaxSlice) setActorVector();
@@ -61,6 +62,7 @@ void myVtkInteractorStyleImage::MoveSliceBackward(void)
       _Slice -= 1;
       //cout << "MoveSliceBackward::Slice = " << _Slice << std::endl;
       _ImageViewer->SetSlice(_Slice);
+      //_ImageViewer->GetRenderer()->GetActors()->GetLastActor()->GetMapper()->InterpolateScalarsBeforeMappingOff();
       //std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
       //_StatusMapper->SetInput(msg.c_str());
       if(_Slice<_MaxSlice) setActorVector();
@@ -94,8 +96,10 @@ void myVtkInteractorStyleImage::setActorVector(void)
     vtkSmartPointer<vtkPolyDataMapper> glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     glyphMapper->SetInputConnection(glyphs->GetOutputPort());
     glyphMapper->ScalarVisibilityOff();
+    glyphMapper->SetColorModeToMapScalars();
     //vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
     _glyphActor->SetMapper(glyphMapper);
+    //_glyphActor->GetProperty()->SetColor(1,0,0);
     _ImageViewer->UpdateDisplayExtent();
     //_ImageViewer->GetRenderer()->AddActor2D(glyphActor);
 }
